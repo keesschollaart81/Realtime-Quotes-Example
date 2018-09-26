@@ -1,0 +1,60 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+}
+<script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function () {
+        var startTime = new Date();
+        var button = document.getElementById('getQuotesBtn');
+        var table = document.querySelector('.table');
+
+        var logMessage = function (sender, obj) {
+            var timeDiff = (new Date() - startTime) / 1000;
+            table.querySelector("tbody").innerHTML += `<tr><th>${sender}</th><td>${timeDiff}s</td><td><pre>${JSON.stringify(obj)}</pre></td></tr>`;
+        };
+
+        var buttonClick = function () {
+            startTime = new Date();
+            connection.send('getQuotesRequest', document.getElementById('city').value);
+        }
+
+        var connection = new signalR.HubConnectionBuilder()
+            .withUrl('/quoteshub')
+            .build();
+
+        connection.on('quotePosted', (message) => { logMessage("quotePosted", message) });
+        connection.on('getQuotesRequestConfirmed', (message) => { logMessage("getQuotesRequestConfirmed", message) });
+        connection.onclose((error) => logMessage("error", error));
+
+        connection.start()
+            .then(function () {
+                button.addEventListener('click', buttonClick);
+                logMessage("connection", "connected");
+            })
+            .catch(function (error) {
+                logMessage("error", error);
+            });
+    });
+</script>
+
+<div>
+    <form>
+        <div class="form-group">
+            <label for="city">City</label>
+            <input type="text" class="form-control" id="city">
+        </div>
+        <button type="button" class="btn btn-primary" id="getQuotesBtn">Submit</button>
+    </form>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>sender</th>
+                <th>Latency</th>
+                <th>Message</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
