@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -18,15 +19,24 @@ namespace RealtimeQuotes.Functions
             ILogger log)
         {
             var city = req.Query["city"].FirstOrDefault();
+            if (city == null) city = Guid.NewGuid().ToString().Substring(0, new Random().Next(2, 6));
 
             string taskId = string.Empty;
 
             if (city != null)
             {
-                taskId = await orchestrationClient.StartNewAsync("Orchestration", new OrchestrationParams(city));
+                taskId = await orchestrationClient.StartNewAsync(nameof(Orchestration), new OrchestrationParams(city, DateTime.UtcNow));
             }
 
-            return new OkObjectResult(taskId);
+            return new OkObjectResult(new { city, taskId });
+        }
+
+        [FunctionName("loaderio-verify")]
+        public static IActionResult LoaderioVerify(
+            [HttpTrigger(AuthorizationLevel.Anonymous, Route = "loaderio-4d2aee32d783c95edf731a75b7f3ea88")]HttpRequest req,
+            ILogger log)
+        {
+            return new OkObjectResult("loaderio-4d2aee32d783c95edf731a75b7f3ea88");
         }
     }
 }

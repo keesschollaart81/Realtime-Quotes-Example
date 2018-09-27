@@ -18,7 +18,7 @@ namespace Frontend
         {
             using (var client = new HttpClient())
             {
-                var result = await client.GetAsync($"{FunctionsBaseUrl}/api/ExecuteCitySearch?city={city}");
+                var result = await client.GetAsync($"{FunctionsBaseUrl}/ExecuteCitySearch?city={city}");
                 string resultContent = await result.Content.ReadAsStringAsync();
                 await Clients.Client(Context.ConnectionId).SendAsync("GetQuotesRequestConfirmed", resultContent);
             }

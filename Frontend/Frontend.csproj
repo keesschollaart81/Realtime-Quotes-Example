@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.1</TargetFramework>
+    <UserSecretsId>35d8a3d7-b4c4-4588-9861-29ad5e9b5171</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -11,6 +12,10 @@
 
   <ItemGroup>
     <Folder Include="wwwroot\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Properties\PublishProfiles\realtime-channel - Web Deploy.pubxml.user" />
   </ItemGroup>
 
 </Project>
