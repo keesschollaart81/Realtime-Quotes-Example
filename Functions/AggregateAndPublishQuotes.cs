@@ -9,7 +9,7 @@ namespace RealtimeQuotes.Functions
 {
     public static partial class ExecuteCitySearchFunctions
     {
-        [FunctionName("AggregateAndPublishQuotes")]
+        [FunctionName(nameof(AggregateAndPublishQuotes))]
         public static async Task AggregateAndPublishQuotes(
           [ActivityTrigger] DurableActivityContext activityContext,
           [SignalR(HubName = "quoteshub")]IAsyncCollector<SignalRMessage> signalRMessages,
@@ -33,7 +33,7 @@ namespace RealtimeQuotes.Functions
                 {
                     x.Quote,
                     x.City,
-                    x.Broker,
+                    x.Supplier,
                     x.TaskId,
                     x.ResponseTime
                 }).ToArray()}

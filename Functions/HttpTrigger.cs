@@ -12,7 +12,7 @@ namespace RealtimeQuotes.Functions
 {
     public static partial class ExecuteCitySearchFunctions
     {
-        [FunctionName("ExecuteCitySearch")]
+        [FunctionName(nameof(ExecuteCitySearch))]
         public static async Task<IActionResult> ExecuteCitySearch(
             [HttpTrigger(AuthorizationLevel.Anonymous)]HttpRequest req,
             [OrchestrationClient] DurableOrchestrationClient orchestrationClient,

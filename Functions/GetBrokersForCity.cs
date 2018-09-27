@@ -6,15 +6,15 @@ namespace RealtimeQuotes.Functions
 {
     public static partial class ExecuteCitySearchFunctions
     {
-        [FunctionName("GetBrokersForCity")]
-        public static string[] GetBrokersForCity(
+        [FunctionName(nameof(GetSuppliersForCity))]
+        public static string[] GetSuppliersForCity(
           [ActivityTrigger] DurableActivityContext activityContext,
           ILogger logger)
         {
             var city = activityContext.GetInput<string>();
-            var brokers = city.ToArray().Select(c => new string(Enumerable.Repeat(c, 8).ToArray()));
+            var Suppliers = city.ToArray().Select(c => new string(Enumerable.Repeat(c, 8).ToArray()));
 
-            return brokers.ToArray();
+            return Suppliers.ToArray();
         }
     }
 }
