@@ -22,13 +22,15 @@ The reason Contoso is so succesful, is their business logic. Contoso applies bus
 
 * An ASP.NET based web application, with a Javascript based front-end
 * [Azure SignalR](https://azure.microsoft.com/nl-nl/services/signalr-service/) for the open connection and communication with the end-user's browser
-* Azure Durable Functions for the Backend processing
+* [Azure Durable Functions](https://github.com/Azure/azure-functions-durable-extension) for the Backend work
 
 ## Architectural overview
 
 ![Overview](Docs/Overview.png)
 
-1. The flow starts with a [HTTP trigger](./Functions/HttpTrigger.cs), triggered by the [SignalR Hub implementation](./Frontend/QuotesHub.cs) in the ASP.NET application. Then a Durable Orchestrator is started and the TaskId of the Orchestrator is returned to the ASP.NET Application. This TaskId can be used for later referance (or status updates in the future, advanced scenario)  2. [The orchestrator](./Functions/Orchestrator.cs) first gets a list of supplier configs for a given city (using an activity). Then he starts a '[GetQuoteForSupplier](./Functions/GetQuoteForSupplier.cs)' Activity for each supplier (varying from 3- 20). In his state, the Orchestrator gathers the results as they come in. For each return value the state gets bigger, and the updated state is pushed to the '[AggregateAndPublishQuotes](./Functions/qAggregateAndPublishQuotes.cs)’ activity.
+1. The flow starts with a [HTTP trigger](./Functions/HttpTrigger.cs), triggered by the [SignalR Hub implementation](./Frontend/QuotesHub.cs) in the ASP.NET application. Then a Durable Orchestrator is started and the TaskId of the Orchestrator is returned to the ASP.NET Application. This TaskId can be used for later referance (or status updates in the future, advanced scenario)
+
+2. [The orchestrator](./Functions/Orchestrator.cs) first gets a list of supplier configs for a given city (using an activity). Then he starts a '[GetQuoteForSupplier](./Functions/GetQuoteForSupplier.cs)' Activity for each supplier (varying from 3- 20). In his state, the Orchestrator gathers the results as they come in. For each return value the state gets bigger, and the updated state is pushed to the '[AggregateAndPublishQuotes](./Functions/qAggregateAndPublishQuotes.cs)’ activity.
 
 3. In the '[GetQuoteForSupplier](./Functions/GetQuoteForSupplier.cs)' activity, the call to the external service is implemented. This might take a couple of seconds (or even fail). This '[GetQuoteForSupplier](./Functions/GetQuoteForSupplier.cs)' activity also transforms the supliers scheme/contract to an internal one. Both the request to the supplier and the result can stored in blob for later reference. The internal / normalized dataset is returned to the Orchestrator.
 
