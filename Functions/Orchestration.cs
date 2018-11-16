@@ -1,26 +1,26 @@
-﻿using Microsoft.ApplicationInsights;
-using Microsoft.ApplicationInsights.Extensibility;
-using Microsoft.Azure.WebJobs;
+﻿using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace RealtimeQuotes.Functions
 {
     public static partial class ExecuteCitySearchFunctions
     {
-        private static string key = TelemetryConfiguration.Active.InstrumentationKey = System.Environment.GetEnvironmentVariable("APPINSIGHTS_INSTRUMENTATIONKEY", EnvironmentVariableTarget.Process);
-        private static TelemetryClient telemetry = new TelemetryClient() { InstrumentationKey = key };
-
         [FunctionName(nameof(Orchestration))]
-        public static async Task Orchestration(
+        public static async Task<double> Orchestration(
             [OrchestrationTrigger] DurableOrchestrationContext context,
+            [Queue("aggregations")] ICollector<AggregateAndPublishQuotesParams> queueCollector,
             ILogger logger,
             ExecutionContext executionContext)
         {
             var started = context.CurrentUtcDateTime;
             var orchestrationParams = context.GetInput<OrchestrationParams>();
+
+            logger.LogMetric("OrchestratorStartLatency", (started - orchestrationParams.Started).TotalMilliseconds);
 
             var parallelTasks = new List<Task<GetQuoteForSupplierResult>>();
 
@@ -38,15 +38,37 @@ namespace RealtimeQuotes.Functions
                 var firstFinishedTask = await Task.WhenAny(parallelTasks);
                 parallelTasks.Remove(firstFinishedTask);
 
-                var quoteForSupplier = await firstFinishedTask;
+                try
+                {
+                    var quoteForSupplier = await firstFinishedTask;
 
-                quotesForSuppliers.Add(quoteForSupplier);
+                    quotesForSuppliers.Add(quoteForSupplier);
 
-                await context.CallActivityAsync(nameof(AggregateAndPublishQuotes), new AggregateAndPublishQuotesParams(quotesForSuppliers));
+                    if (!context.IsReplaying) // only publish when we have new results incoming, this is particularly relevant when extended sessions is off
+                    {
+                        var aggregateAndPublishQuotesParams = new AggregateAndPublishQuotesParams(quotesForSuppliers);
+
+                        // using a queue here, not using activity or sub orchestrator because we want fire&forget
+                        queueCollector.Add(aggregateAndPublishQuotesParams);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "Quote failed");
+
+                    // do not fail orchestrator when broker request failed
+                }
             }
-            
-            telemetry.TrackMetric("OrchestratorStartLatency", (started - orchestrationParams.Started).TotalSeconds);
-            telemetry.TrackMetric("OrchestratorDuration", (DateTime.UtcNow - started).TotalMilliseconds);
+
+            logger.LogMetric("OrchestratorDuration", (DateTime.UtcNow - started).TotalMilliseconds);
+
+            var slowestBroker = quotesForSuppliers.Max(x => x.ResponseTime);
+
+            // netto means than we dont include the wait time for the external broker
+            var orchestratorDurationNetto = (DateTime.UtcNow - started).TotalMilliseconds - slowestBroker;
+            logger.LogMetric("OrchestratorDurationNetto", orchestratorDurationNetto);
+
+            return orchestratorDurationNetto;
         }
     }
 }

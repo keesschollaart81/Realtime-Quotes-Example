@@ -31,6 +31,19 @@ namespace RealtimeQuotes.Functions
             return new OkObjectResult(new { city, taskId });
         }
 
+        [FunctionName(nameof(CitySearchStatus))]
+        public static async Task<IActionResult> CitySearchStatus(
+            [HttpTrigger(AuthorizationLevel.Anonymous)]HttpRequest req,
+            [OrchestrationClient] DurableOrchestrationClient orchestrationClient,
+            ILogger log)
+        {
+            var taskId = req.Query["taskId"].FirstOrDefault();
+
+            var status = await orchestrationClient.GetStatusAsync(taskId);
+
+            return new OkObjectResult(status);
+        }
+
         [FunctionName("loaderio-verify")]
         public static IActionResult LoaderioVerify(
             [HttpTrigger(AuthorizationLevel.Anonymous, Route = "loaderio-4d2aee32d783c95edf731a75b7f3ea88")]HttpRequest req,

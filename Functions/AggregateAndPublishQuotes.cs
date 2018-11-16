@@ -11,13 +11,12 @@ namespace RealtimeQuotes.Functions
     {
         [FunctionName(nameof(AggregateAndPublishQuotes))]
         public static async Task AggregateAndPublishQuotes(
-          [ActivityTrigger] DurableActivityContext activityContext,
-          [SignalR(HubName = "quoteshub")]IAsyncCollector<SignalRMessage> signalRMessages,
-          ILogger logger)
+            [QueueTrigger("aggregations")] AggregateAndPublishQuotesParams message,
+            [OrchestrationClient] DurableOrchestrationClient orchestrationClient,
+            [SignalR(HubName = "quoteshub")]IAsyncCollector<SignalRMessage> signalRMessages,
+            ILogger logger)
         {
-            var input = activityContext.GetInput<AggregateAndPublishQuotesParams>();
-
-            var updatedQuotes = input.QuoteResponses.OrderBy(x => x.Quote);
+            var updatedQuotes = message.QuoteResponses.OrderBy(x => x.Quote);
             foreach (var updatedQuote in updatedQuotes)
             {
                 updatedQuote.Quote = Math.Ceiling(updatedQuote.Quote);

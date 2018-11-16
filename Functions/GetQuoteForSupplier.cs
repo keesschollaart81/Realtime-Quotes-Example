@@ -1,12 +1,18 @@
 ﻿using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace RealtimeQuotes.Functions
 {
     public static partial class ExecuteCitySearchFunctions
     {
+        private static HttpClient httpClient = new HttpClient();
+
         [FunctionName(nameof(GetQuoteForSupplier))]
         public static async Task<GetQuoteForSupplierResult> GetQuoteForSupplier(
           [ActivityTrigger] DurableActivityContext activityContext,
@@ -14,13 +20,30 @@ namespace RealtimeQuotes.Functions
         {
             var input = activityContext.GetInput<GetQuoteForSupplierParams>();
 
-            var quote = new Random().NextDouble() * 10; // random quote between 0 and 10
+            //var rootUrl = Environment.GetEnvironmentVariable("RandomDataServiceRootUrl", EnvironmentVariableTarget.Process);
+            var randomInt = new Random().Next(1, 8);
 
-            var responseTime = TimeSpan.FromSeconds(new Random().Next(10));
-            // simulate fast and slow HTTP request to a Supplier
-            //await Task.Delay(responseTime);
+            var sw = new Stopwatch();
+            sw.Start();
+            //var response = await httpClient.GetAsync($"{rootUrl}/api/values/{input.City}/{input.TaskId}");
+            var response = await httpClient.GetAsync($"https://realtimechannel.blob.core.windows.net/randomfiles/{randomInt}.json");
+            response.EnsureSuccessStatusCode(); 
 
-            return new GetQuoteForSupplierResult(input.Supplier, input.City, input.TaskId, quote, responseTime.TotalSeconds);
+            var responseString = await response.Content.ReadAsStringAsync();
+            var deserializedQuote = JsonConvert.DeserializeObject<RandomQuoteResult>(responseString);
+            sw.Stop();
+
+            return new GetQuoteForSupplierResult(input.Supplier, input.City, input.TaskId, deserializedQuote.Quote, sw.ElapsedMilliseconds);
+        }
+
+        private class RandomQuoteResult
+        {
+            public string City { get; set; }
+
+            public double Quote { get; set; }
+
+            public List<string> Data { get; set; }
+
         }
     }
 }

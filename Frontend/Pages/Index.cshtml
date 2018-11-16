@@ -9,9 +9,17 @@
         var button = document.getElementById('getQuotesBtn');
         var table = document.querySelector('.table');
 
-        var logMessage = function (sender, obj) {
-            var timeDiff = (new Date() - startTime) / 1000;
-            table.querySelector("tbody").innerHTML += `<tr><th>${sender}</th><td>${timeDiff}s</td><td><pre>${JSON.stringify(obj)}</pre></td></tr>`;
+        var logMessage = function (sender, obj) { 
+            var highest = 0;
+            for (i = 0; i < obj.length; i++) {
+                if (obj[i].ResponseTime) {
+                    if (obj[i].ResponseTime > highest) highest = obj[i].ResponseTime; 
+                }
+            }
+            var timeDiff = (new Date() - startTime) ;
+            var timeDiffNet = (timeDiff  - highest);
+
+            table.querySelector("tbody").innerHTML += `<tr><th>${sender}</th><td>${timeDiff / 1000}s</td><td>${highest / 1000}s</td><td>${timeDiffNet / 1000}s</td><td><pre>${JSON.stringify(obj)}</pre></td></tr>`;
         };
 
         var buttonClick = function () {
@@ -24,7 +32,10 @@
             .build();
 
         connection.on('quotePosted', (message) => { logMessage("quotePosted", message) });
-        connection.on('getQuotesRequestConfirmed', (message) => { logMessage("getQuotesRequestConfirmed", message) });
+        connection.on('getQuotesRequestConfirmed', (message) => {
+            getQuotesRequestConfirmedStartTime = new Date();
+            logMessage("getQuotesRequestConfirmed", message)
+        });
         connection.onclose((error) => logMessage("error", error));
 
         connection.start()
@@ -52,6 +63,8 @@
             <tr>
                 <th>sender</th>
                 <th>Latency</th>
+                <th>Broker Duration</th>
+                <th>Per Req Overhead</th>
                 <th>Message</th>
             </tr>
         </thead>

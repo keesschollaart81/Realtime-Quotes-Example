@@ -5,8 +5,10 @@
       "routePrefix": ""
     },
     "durableTask": {
-      "extendedSessionsEnabled": true,
-      "extendedSessionIdleTimeoutInSeconds": 30
+      "partitionCount": 16,
+      "extendedSessionsEnabled": false,
+      "extendedSessionIdleTimeoutInSeconds": 30,
+      "azureStorageConnectionStringName": "DurableStorage"
     }
   } 
 }
