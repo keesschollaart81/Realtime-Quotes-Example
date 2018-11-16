@@ -6,7 +6,7 @@
     },
     "durableTask": {
       "partitionCount": 16,
-      "extendedSessionsEnabled": false,
+      "extendedSessionsEnabled": true,
       "extendedSessionIdleTimeoutInSeconds": 30,
       "azureStorageConnectionStringName": "DurableStorage"
     }

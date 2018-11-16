@@ -12,8 +12,7 @@ namespace RealtimeQuotes.Functions
         [FunctionName(nameof(AggregateAndPublishQuotes))]
         public static async Task AggregateAndPublishQuotes(
             [QueueTrigger("aggregations")] AggregateAndPublishQuotesParams message,
-            [OrchestrationClient] DurableOrchestrationClient orchestrationClient,
-            [SignalR(HubName = "quoteshub")]IAsyncCollector<SignalRMessage> signalRMessages,
+            //[SignalR(HubName = "quoteshub")]IAsyncCollector<SignalRMessage> signalRMessages,
             ILogger logger)
         {
             var updatedQuotes = message.QuoteResponses.OrderBy(x => x.Quote);
@@ -24,19 +23,19 @@ namespace RealtimeQuotes.Functions
 
             logger.LogInformation($"Publishing {updatedQuotes.Count()} quotes");
 
-            await signalRMessages.AddAsync(new SignalRMessage
-            {
-                //UserId = input.CorrelationId,
-                Target = "quotePosted",
-                Arguments = new[]{ updatedQuotes.Select(x => new
-                {
-                    x.Quote,
-                    x.City,
-                    x.Supplier,
-                    x.TaskId,
-                    x.ResponseTime
-                }).ToArray()}
-            });
+            //await signalRMessages.AddAsync(new SignalRMessage
+            //{
+            //    //UserId = input.CorrelationId,
+            //    Target = "quotePosted",
+            //    Arguments = new[]{ updatedQuotes.Select(x => new
+            //    {
+            //        x.Quote,
+            //        x.City,
+            //        x.Supplier,
+            //        x.TaskId,
+            //        x.ResponseTime
+            //    }).ToArray()}
+            //});
         }
     }
 }
