@@ -8,7 +8,9 @@
       "partitionCount": 16,
       "extendedSessionsEnabled": true,
       "extendedSessionIdleTimeoutInSeconds": 30,
-      "azureStorageConnectionStringName": "DurableStorage"
+      "azureStorageConnectionStringName": "DurableStorage",
+      "maxConcurrentActivityFunctions": 250,
+      "maxConcurrentOrchestratorFunctions": 250
     }
   } 
 }

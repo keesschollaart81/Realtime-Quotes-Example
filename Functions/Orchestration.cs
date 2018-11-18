@@ -2,7 +2,6 @@
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -31,33 +30,24 @@ namespace RealtimeQuotes.Functions
                 parallelTasks.Add(task);
             }
 
-            var quotesForSuppliers = new List<GetQuoteForSupplierResult>();
+            var results = await Task.WhenAll(parallelTasks);
+            var quotesForSuppliers = results.ToList();
 
-            while (parallelTasks.Count > 0)
+            try
             {
-                var firstFinishedTask = await Task.WhenAny(parallelTasks);
-                parallelTasks.Remove(firstFinishedTask);
-
-                try
+                if (!context.IsReplaying) // only publish when we have new results incoming, this is particularly relevant when extended sessions is off
                 {
-                    var quoteForSupplier = await firstFinishedTask;
+                    var aggregateAndPublishQuotesParams = new AggregateAndPublishQuotesParams(quotesForSuppliers);
 
-                    quotesForSuppliers.Add(quoteForSupplier);
-
-                    if (!context.IsReplaying) // only publish when we have new results incoming, this is particularly relevant when extended sessions is off
-                    {
-                        var aggregateAndPublishQuotesParams = new AggregateAndPublishQuotesParams(quotesForSuppliers);
-
-                        // using a queue here, not using activity or sub orchestrator because we want fire&forget
-                        queueCollector.Add(aggregateAndPublishQuotesParams);
-                    }
+                    // using a queue here, not using activity or sub orchestrator because we want fire&forget
+                    queueCollector.Add(aggregateAndPublishQuotesParams);
                 }
-                catch (Exception ex)
-                {
-                    logger.LogWarning(ex, "Quote failed");
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Quote failed");
 
-                    // do not fail orchestrator when broker request failed
-                }
+                // do not fail orchestrator when broker request failed
             }
 
             logger.LogMetric("OrchestratorDuration", (DateTime.UtcNow - started).TotalMilliseconds);
